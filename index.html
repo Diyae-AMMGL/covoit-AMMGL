@@ -3,70 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Covoiturage Mosquée - TrajetGuenette</title>
+    <title>TrajetGuenette - Sécurisé</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --primary: #2e7d32; --secondary: #f1f8e9; --text: #333; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #fdfdfd; color: var(--text); }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.4rem; font-weight: bold; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
-        #map { height: 200px; width: 90%; margin: 15px auto; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 1; }
+        :root { --primary: #1b5e20; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); }
+        
+        /* PAGE DE CONNEXION */
+        #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+        /* APP */
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+        #map { height: 160px; width: 100%; }
         .container { padding: 15px; max-width: 450px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-        .trajet-card { background: var(--secondary); padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .info h4 { margin: 0; color: var(--primary); }
-        .price { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-top: -30px; position: relative; z-index: 10; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        .trajet-card { background: white; padding: 15px; border-radius: 12px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ff9800; }
+        .btn-reserve { background: #ff9800; color: white; text-decoration: none; padding: 10px; border-radius: 8px; display: block; text-align: center; margin-top: 10px; font-weight: bold; }
+        .user-tag { font-size: 12px; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<header>🕌 Covoiturage Mosquée</header>
-<div id="map"></div>
-
-<div class="container">
-    <div class="card">
-        <h3 style="margin-top:0">🚗 Proposer un trajet</h3>
-        <input type="text" id="dep" placeholder="📍 Départ (ex: Rue Guenette)">
-        <input type="text" id="dest" placeholder="🏁 Destination (ex: Mosquée de Lévis)">
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="prix" placeholder="Prix $ (0 = Gratuit)">
-            <input type="datetime-local" id="date">
-        </div>
-        <button onclick="ajouter()">Publier l'offre</button>
+<div id="login-screen">
+    <div class="login-card">
+        <h2 style="color:var(--primary)">🕌 Accès Membres</h2>
+        <p>Entrez votre email pour continuer</p>
+        <input type="email" id="user-email" placeholder="votre@email.com">
+        <button onclick="seConnecter()">Accéder aux trajets</button>
     </div>
+</div>
 
-    <div id="liste-trajets">
-        <p style="text-align:center; color: #888; margin-top:20px;">Chargement des trajets...</p>
+<div id="main-app" style="display:none;">
+    <header>TrajetGuenette <span id="display-user" style="font-size:10px; opacity:0.7;"></span></header>
+    <div id="map"></div>
+    <div class="container">
+        <div class="card">
+            <h3 style="margin-top:0">🚗 Publier un trajet</h3>
+            <input type="text" id="dep" placeholder="📍 Départ">
+            <input type="text" id="dest" placeholder="🏁 Destination">
+            <input type="tel" id="phone" placeholder="📱 Ton Téléphone (Ex: 418...)">
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="prix" placeholder="Prix $">
+                <input type="datetime-local" id="date">
+            </div>
+            <button onclick="ajouter()">Publier mon offre</button>
+        </div>
+        <div id="liste"></div>
     </div>
 </div>
 
 <script>
-    // Configuration de la carte sur Lévis (Guenette area)
-    const map = L.map('map').setView([46.78, -71.18], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    L.marker([46.78, -71.18]).addTo(map).bindPopup('Secteur Guenette').openPopup();
-
-    // Connexion Supabase (Tes clés que j'ai mémorisées)
+    let currentUserEmail = "";
     const SB_URL = "https://ksbzyqmdmqfpsgvrhrah.supabase.co";
     const SB_KEY = "sb_publishable_K7nSAQpM6rO_G_I3hG_Rvhrah";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
+    function seConnecter() {
+        const email = document.getElementById('user-email').value;
+        if(email.includes('@')) {
+            currentUserEmail = email;
+            document.getElementById('login-screen').style.display = "none";
+            document.getElementById('main-app').style.display = "block";
+            document.getElementById('display-user').innerText = "(" + email + ")";
+            init();
+        } else { alert("Email invalide !"); }
+    }
+
+    function init() {
+        const map = L.map('map').setView([46.78, -71.18], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        charger();
+    }
+
     async function charger() {
         const { data } = await supabaseClient.from('trajets').select('*').order('id', { ascending: false });
-        const div = document.getElementById('liste-trajets');
-        div.innerHTML = "<h3 style='margin-top:25px'>Trajets disponibles</h3>";
-        if(data.length === 0) div.innerHTML += "<p>Aucun trajet pour l'instant.</p>";
+        const div = document.getElementById('liste');
+        div.innerHTML = "<h3>Trajets disponibles</h3>";
         data.forEach(t => {
+            const msgSms = `Salut! Je veux reserver une place pour le trajet ${t.depart} vers ${t.destination}.`;
             div.innerHTML += `
                 <div class="trajet-card">
-                    <div class="info">
-                        <h4>${t.depart} ➔ ${t.destination}</h4>
-                        <small>📅 ${t.date_heure ? t.date_heure.replace('T', ' à ') : 'Heure à confirmer'}</small>
-                    </div>
-                    <div class="price">${t.prix}$</div>
+                    <strong>${t.depart} ➔ ${t.destination}</strong><br>
+                    <span class="user-tag">Par: ${t.email}</span><br>
+                    <small>📅 ${t.date_heure ? t.date_heure.replace('T', ' ') : ''}</small><br>
+                    <div style="font-weight:bold; color:var(--primary); margin-top:5px;">Prix: ${t.prix}$</div>
+                    <a href="sms:+1${t.phone}&body=${encodeURIComponent(msgSms)}" class="btn-reserve">📱 Réserver par SMS</a>
                 </div>`;
         });
     }
@@ -74,27 +102,19 @@
     async function ajouter() {
         const d = document.getElementById('dep').value;
         const s = document.getElementById('dest').value;
+        const ph = document.getElementById('phone').value;
         const p = document.getElementById('prix').value;
         const t = document.getElementById('date').value;
 
-        if(!d || !s) return alert("Indique au moins le départ et l'arrivée !");
+        if(!d || !s || !ph) return alert("Le téléphone est OBLIGATOIRE !");
 
         const { error } = await supabaseClient.from('trajets').insert([{ 
-            depart: d, 
-            destination: s, 
-            prix: p || 0, 
-            date_heure: t 
+            depart: d, destination: s, phone: ph, email: currentUserEmail, prix: p, date_heure: t 
         }]);
-        
-        if (error) {
-            alert("Erreur de connexion. Vérifie si ta table 'trajets' est bien créée dans Supabase.");
-        } else {
-            alert("✅ Trajet publié avec succès !");
-            charger();
-        }
-    }
 
-    charger();
+        if(!error) { alert("Trajet publié !"); charger(); }
+        else { alert("Erreur : Vérifie tes colonnes dans Supabase (phone et email)"); }
+    }
 </script>
 </body>
 </html>
