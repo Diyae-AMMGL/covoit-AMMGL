@@ -3,91 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AMMGL Express Pro</title>
+    <title>Covoiturage Mosquée - TrajetGuenette</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --primary: #0052cc; --accent: #2ecc71; --dark: #1a1a1a; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f8f9fa; color: var(--dark); }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        #map { height: 250px; width: 100%; z-index: 1; }
-        .container { padding: 15px; max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: -30px; position: relative; z-index: 10; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; transition: 0.3s; cursor: pointer; }
-        button:active { transform: scale(0.98); }
-        .trajet-item { background: white; padding: 15px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--accent); }
-        .price-tag { background: #eef9f2; color: var(--accent); padding: 5px 12px; border-radius: 20px; font-weight: bold; }
+        :root { --primary: #2e7d32; --secondary: #f1f8e9; --text: #333; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #fdfdfd; color: var(--text); }
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.4rem; font-weight: bold; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        #map { height: 200px; width: 90%; margin: 15px auto; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 1; }
+        .container { padding: 15px; max-width: 450px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .trajet-card { background: var(--secondary); padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .info h4 { margin: 0; color: var(--primary); }
+        .price { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<header>🚗 AMMGL EXPRESS</header>
+<header>🕌 Covoiturage Mosquée</header>
 <div id="map"></div>
 
 <div class="container">
     <div class="card">
-        <h3 style="margin-top:0">Publier un trajet</h3>
-        <input type="text" id="dep" placeholder="📍 Départ (ex: Lévis)">
-        <input type="text" id="dest" placeholder="🏁 Destination (ex: Québec)">
+        <h3 style="margin-top:0">🚗 Proposer un trajet</h3>
+        <input type="text" id="dep" placeholder="📍 Départ (ex: Rue Guenette)">
+        <input type="text" id="dest" placeholder="🏁 Destination (ex: Mosquée de Lévis)">
         <div style="display:flex; gap:10px;">
-            <input type="number" id="prix" placeholder="Prix ($)">
+            <input type="number" id="prix" placeholder="Prix $ (0 = Gratuit)">
             <input type="datetime-local" id="date">
         </div>
-        <button onclick="publier()">Publier mon trajet</button>
+        <button onclick="ajouter()">Publier l'offre</button>
     </div>
 
-    <div id="liste">
-        <p style="text-align:center; color: #888;">Recherche des trajets...</p>
+    <div id="liste-trajets">
+        <p style="text-align:center; color: #888; margin-top:20px;">Chargement des trajets...</p>
     </div>
 </div>
 
 <script>
-    // Initialisation de la carte (Centrée sur Lévis)
-    const map = L.map('map').setView([46.8033, -71.1779], 11);
+    // Configuration de la carte sur Lévis (Guenette area)
+    const map = L.map('map').setView([46.78, -71.18], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.marker([46.78, -71.18]).addTo(map).bindPopup('Secteur Guenette').openPopup();
 
-    // Connexion Supabase
+    // Connexion Supabase (Tes clés que j'ai mémorisées)
     const SB_URL = "https://ksbzyqmdmqfpsgvrhrah.supabase.co";
     const SB_KEY = "sb_publishable_K7nSAQpM6rO_G_I3hG_Rvhrah";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
     async function charger() {
         const { data } = await supabaseClient.from('trajets').select('*').order('id', { ascending: false });
-        const div = document.getElementById('liste');
-        div.innerHTML = "<h3 style='margin-bottom:10px'>Trajets en direct</h3>";
+        const div = document.getElementById('liste-trajets');
+        div.innerHTML = "<h3 style='margin-top:25px'>Trajets disponibles</h3>";
+        if(data.length === 0) div.innerHTML += "<p>Aucun trajet pour l'instant.</p>";
         data.forEach(t => {
             div.innerHTML += `
-                <div class="trajet-item">
-                    <div>
-                        <strong>${t.depart} → ${t.destination}</strong><br>
-                        <small style="color:#777">📅 ${t.date_heure.replace('T', ' ')}</small>
+                <div class="trajet-card">
+                    <div class="info">
+                        <h4>${t.depart} ➔ ${t.destination}</h4>
+                        <small>📅 ${t.date_heure ? t.date_heure.replace('T', ' à ') : 'Heure à confirmer'}</small>
                     </div>
-                    <div class="price-tag">${t.prix}$</div>
+                    <div class="price">${t.prix}$</div>
                 </div>`;
         });
     }
 
-    async function publier() {
+    async function ajouter() {
         const d = document.getElementById('dep').value;
         const s = document.getElementById('dest').value;
         const p = document.getElementById('prix').value;
         const t = document.getElementById('date').value;
 
-        if(!d || !s || !p) return alert("Remplis les infos !");
+        if(!d || !s) return alert("Indique au moins le départ et l'arrivée !");
 
-        const { error } = await supabaseClient.from('trajets').insert([{ depart: d, destination: s, prix: p, date_heure: t }]);
+        const { error } = await supabaseClient.from('trajets').insert([{ 
+            depart: d, 
+            destination: s, 
+            prix: p || 0, 
+            date_heure: t 
+        }]);
         
-        if (error) alert("Vérifie ta table Supabase !");
-        else {
-            alert("✅ C'est en ligne !");
+        if (error) {
+            alert("Erreur de connexion. Vérifie si ta table 'trajets' est bien créée dans Supabase.");
+        } else {
+            alert("✅ Trajet publié avec succès !");
             charger();
         }
     }
 
     charger();
 </script>
-
 </body>
 </html>
