@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Covoiturage AMMGL</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .app-container { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 380px; overflow: hidden; }
+        .banner { background: #3a55b4; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .label { color: #666; font-size: 14px; }
+        .value { font-weight: bold; color: #333; }
+        .btn-reserve { width: 100%; background: #3a55b4; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        .btn-reserve:active { transform: scale(0.98); }
+        .btn-reserve:disabled { background: #ccc; cursor: not-allowed; }
+        .status { text-align: center; margin-top: 10px; color: #e74c3c; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="banner">
+        <h2 style="margin:0">Covoiturage AMMGL</h2>
+        <p style="margin:5px 0 0; opacity:0.8">Trajet vers la Mosquée</p>
+    </div>
+
+    <div class="content">
+        <div class="info-row"><span class="label">Conducteur</span><span class="value">Moi</span></div>
+        <div class="info-row"><span class="label">Prix</span><span class="value">5$</span></div>
+        <div class="info-row"><span class="label">Départ</span><span class="value">Lévis, QC</span></div>
+        <div class="info-row"><span class="label">Places Restantes</span><span id="compteur" class="value" style="color:#2ecc71">5</span></div>
+
+        <button class="btn-reserve" onclick="prendrePlace()" id="monBouton">✓ Réserver ma place</button>
+        <div id="alerte" class="status"></div>
+    </div>
+</div>
+
+<script>
+    let stock = 5;
+    function prendrePlace() {
+        if (stock > 0) {
+            stock--;
+            document.getElementById('compteur').innerText = stock;
+            if (stock === 0) {
+                document.getElementById('monBouton').disabled = true;
+                document.getElementById('monBouton').innerText = "Complet";
+                document.getElementById('alerte').innerText = "Plus de places disponibles !";
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
