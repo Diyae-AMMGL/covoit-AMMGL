@@ -3,75 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Covoiturage AMMGL</title>
+    <title>AMMGL Express</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 400px; }
-        .header { background: #3a55b4; color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h3 { margin-top: 0; color: #333; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn-add { width: 100%; background: #3a55b4; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .trajet { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #2ecc71; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
-        .btn-wa { background: #25D366; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; text-decoration: none; font-size: 14px; }
+        :root { --primary: #0052cc; --bg: #f4f5f7; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .app-header { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn-auth { background: none; border: 2px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 10px; font-weight: bold; float: right; margin-top: -45px; cursor: pointer; }
+        
+        /* Style AmigoExpress */
+        .form-pro { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
+        
+        .flex { display: flex; gap: 10px; }
+        .btn-publish { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; transition: 0.3s; }
+        .btn-publish:hover { background: #003d99; }
+
+        .trajet-card { background: white; margin-top: 20px; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--primary); }
+        .price-tag { font-size: 20px; font-weight: bold; color: #2ecc71; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1 style="margin:0">🚗 AMMGL Covoit</h1>
-        <p style="margin:5px 0 0; opacity:0.8">Communauté de Lévis</p>
-    </div>
-
-    <div class="card">
-        <h3>Proposer un trajet</h3>
-        <input type="text" id="dest" placeholder="📍 Destination (ex: Mosquée)">
-        <input type="text" id="heure" placeholder="⏰ Heure (ex: 18h30)">
-        <input type="number" id="pl" placeholder="💺 Places disponibles">
-        <button class="btn-add" onclick="ajouter()">Publier l'annonce</button>
-    </div>
-
-    <div id="liste"></div>
+<div class="app-header">
+    <h2 style="margin:0; color: var(--primary)">🚗 AMMGL Pro</h2>
+    <button class="btn-auth" onclick="alert('Bientôt : Connexion avec Supabase')">S'inscrire</button>
 </div>
 
+<div class="form-pro">
+    <div class="input-group">
+        <label>📍 Lieu de départ</label>
+        <input type="text" id="dep" placeholder="Ex: 39 Rue Guenette, Lévis">
+    </div>
+    <div class="input-group">
+        <label>🏁 Destination</label>
+        <input type="text" id="dest" placeholder="Ex: Couche-Tard Charny">
+    </div>
+    <div class="flex">
+        <div class="input-group" style="flex:2">
+            <label>📅 Date et Heure</label>
+            <input type="datetime-local" id="date">
+        </div>
+        <div class="input-group" style="flex:1">
+            <label>💰 Prix ($)</label>
+            <input type="number" id="prix" placeholder="15">
+        </div>
+    </div>
+    <div class="flex">
+        <div class="input-group" style="flex:1">
+            <label>💺 Places</label>
+            <select id="pl">
+                <option>1</option><option>2</option><option selected>3</option><option>4</option>
+            </select>
+        </div>
+        <div class="input-group" style="flex:1">
+            <label>📦 Bagages</label>
+            <select id="bag">
+                <option>Petit</option><option selected>Moyen</option><option>Gros</option>
+            </select>
+        </div>
+    </div>
+    <button class="btn-publish" onclick="publier()">Publier le trajet</button>
+</div>
+
+<div id="liste"></div>
+
 <script>
-    let trajets = JSON.parse(localStorage.getItem('covoit_db')) || [];
+    function publier() {
+        const dep = document.getElementById('dep').value;
+        const dest = document.getElementById('dest').value;
+        const prix = document.getElementById('prix').value;
+        const date = document.getElementById('date').value;
 
-    function afficher() {
-        const div = document.getElementById('liste');
-        div.innerHTML = "";
-        trajets.forEach((t, i) => {
-            div.innerHTML += `
-                <div class="trajet">
-                    <button class="btn-wa" onclick="reserver(${i})">Réserver</button>
-                    <strong>${t.dest}</strong><br>
-                    <span style="color:#666; font-size:14px;">Départ: ${t.heure} · ${t.pl} places</span>
-                </div>`;
-        });
+        if(!dep || !dest || !prix) return alert("Remplis tout !");
+
+        const list = document.getElementById('liste');
+        const card = `
+            <div class="trajet-card">
+                <div>
+                    <div style="font-weight:bold; font-size:16px;">${dep} → ${dest}</div>
+                    <div style="color:#666; font-size:13px; margin-top:5px;">📅 ${date.replace('T', ' à ')}</div>
+                </div>
+                <div class="price-tag">${prix}$</div>
+            </div>
+        `;
+        list.innerHTML = card + list.innerHTML;
     }
-
-    function ajouter() {
-        const d = document.getElementById('dest').value;
-        const h = document.getElementById('heure').value;
-        const p = document.getElementById('pl').value;
-        if(d && h && p) {
-            trajets.push({dest: d, heure: h, pl: p});
-            localStorage.setItem('covoit_db', JSON.stringify(trajets));
-            document.getElementById('dest').value = "";
-            document.getElementById('heure').value = "";
-            document.getElementById('pl').value = "";
-            afficher();
-        }
-    }
-
-    function reserver(i) {
-        const t = trajets[i];
-        const msg = encodeURIComponent(`Salam! Je souhaite réserver une place pour le trajet vers ${t.dest} à ${t.heure}.`);
-        window.open(`https://wa.me/14181234567?text=${msg}`); // CHANGE LE NUMÉRO ICI
-    }
-
-    afficher();
 </script>
 
 </body>
