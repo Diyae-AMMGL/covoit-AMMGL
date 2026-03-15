@@ -3,117 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrajetGuenette - Sécurisé</title>
+    <title>TrajetGuenette - Officiel</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --primary: #1b5e20; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); }
-        
-        /* PAGE DE CONNEXION */
-        #login-screen { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-
-        /* APP */
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2rem; }
-        #map { height: 160px; width: 100%; }
-        .container { padding: 15px; max-width: 450px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-top: -30px; position: relative; z-index: 10; }
-        
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        .trajet-card { background: white; padding: 15px; border-radius: 12px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ff9800; }
-        .btn-reserve { background: #ff9800; color: white; text-decoration: none; padding: 10px; border-radius: 8px; display: block; text-align: center; margin-top: 10px; font-weight: bold; }
-        .user-tag { font-size: 12px; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: #1b5e20; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .trajet { background: white; padding: 15px; margin-top: 15px; border-radius: 10px; border-left: 6px solid #ef6c00; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .nom-chauffeur { color: #1b5e20; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="login-screen">
-    <div class="login-card">
-        <h2 style="color:var(--primary)">🕌 Accès Membres</h2>
-        <p>Entrez votre email pour continuer</p>
-        <input type="email" id="user-email" placeholder="votre@email.com">
-        <button onclick="seConnecter()">Accéder aux trajets</button>
+<div id="login-zone">
+    <div class="card">
+        <h2>🕌 Connexion</h2>
+        <input type="text" id="u_nom" placeholder="Ton Nom et Prénom">
+        <input type="email" id="u_email" placeholder="Ton adresse Email">
+        <input type="password" id="u_code" placeholder="Code secret (1234)">
+        <button onclick="connexion()">Entrer</button>
     </div>
 </div>
 
-<div id="main-app" style="display:none;">
-    <header>TrajetGuenette <span id="display-user" style="font-size:10px; opacity:0.7;"></span></header>
-    <div id="map"></div>
-    <div class="container">
-        <div class="card">
-            <h3 style="margin-top:0">🚗 Publier un trajet</h3>
-            <input type="text" id="dep" placeholder="📍 Départ">
-            <input type="text" id="dest" placeholder="🏁 Destination">
-            <input type="tel" id="phone" placeholder="📱 Ton Téléphone (Ex: 418...)">
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="prix" placeholder="Prix $">
-                <input type="datetime-local" id="date">
-            </div>
-            <button onclick="ajouter()">Publier mon offre</button>
-        </div>
-        <div id="liste"></div>
+<div id="app-zone" style="display:none;">
+    <div class="card">
+        <h3>🚗 Proposer un trajet</h3>
+        <p id="bienvenue" style="font-size: 14px; color: #666;"></p>
+        <input type="text" id="dep" placeholder="📍 Départ (ex: Rue Guenette)">
+        <input type="text" id="dest" placeholder="🏁 Arrivée (ex: Mosquée)">
+        <input type="tel" id="tel_chauffeur" placeholder="📱 Ton Téléphone">
+        <input type="text" id="prix_trajet" placeholder="💰 Prix (ex: Gratuit)">
+        <button onclick="publier()">Publier l'offre</button>
     </div>
+    <div id="liste-trajets" style="max-width: 400px; margin: 20px auto;"></div>
 </div>
 
 <script>
-    let currentUserEmail = "";
     const SB_URL = "https://ksbzyqmdmqfpsgvrhrah.supabase.co";
     const SB_KEY = "sb_publishable_K7nSAQpM6rO_G_I3hG_Rvhrah";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+    
+    let emailSession = "";
+    let nomSession = "";
 
-    function seConnecter() {
-        const email = document.getElementById('user-email').value;
-        if(email.includes('@')) {
-            currentUserEmail = email;
-            document.getElementById('login-screen').style.display = "none";
-            document.getElementById('main-app').style.display = "block";
-            document.getElementById('display-user').innerText = "(" + email + ")";
-            init();
-        } else { alert("Email invalide !"); }
+    function connexion() {
+        const nom = document.getElementById('u_nom').value;
+        const mail = document.getElementById('u_email').value;
+        const code = document.getElementById('u_code').value;
+
+        if(nom.length > 2 && mail.includes('@') && code === "1234") {
+            nomSession = nom;
+            emailSession = mail;
+            document.getElementById('login-zone').style.display = "none";
+            document.getElementById('app-zone').style.display = "block";
+            document.getElementById('bienvenue').innerText = "Ravi de vous voir, " + nomSession;
+            chargerTrajets();
+        } else { alert("Merci de remplir Nom, Email et Code (1234) correctement."); }
     }
 
-    function init() {
-        const map = L.map('map').setView([46.78, -71.18], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        charger();
-    }
-
-    async function charger() {
-        const { data } = await supabaseClient.from('trajets').select('*').order('id', { ascending: false });
-        const div = document.getElementById('liste');
-        div.innerHTML = "<h3>Trajets disponibles</h3>";
+    async function chargerTrajets() {
+        const { data } = await supabaseClient.from('trajets').select('*').order('id', {ascending: false});
+        const div = document.getElementById('liste-trajets');
+        div.innerHTML = "<h3>Trajets disponibles :</h3>";
         data.forEach(t => {
-            const msgSms = `Salut! Je veux reserver une place pour le trajet ${t.depart} vers ${t.destination}.`;
             div.innerHTML += `
-                <div class="trajet-card">
+                <div class="trajet">
+                    <div class="nom-chauffeur">👤 ${t.nom || 'Anonyme'}</div>
                     <strong>${t.depart} ➔ ${t.destination}</strong><br>
-                    <span class="user-tag">Par: ${t.email}</span><br>
-                    <small>📅 ${t.date_heure ? t.date_heure.replace('T', ' ') : ''}</small><br>
-                    <div style="font-weight:bold; color:var(--primary); margin-top:5px;">Prix: ${t.prix}$</div>
-                    <a href="sms:+1${t.phone}&body=${encodeURIComponent(msgSms)}" class="btn-reserve">📱 Réserver par SMS</a>
+                    <span style="font-weight:bold; color:#1b5e20;">Prix: ${t.prix || 'Gratuit'}</span><br>
+                    <button style="background:#ef6c00; margin-top:10px;" onclick="reserver(${t.id}, '${t.phone}', '${t.nom}')">Réserver</button>
                 </div>`;
         });
     }
 
-    async function ajouter() {
+    async function publier() {
         const d = document.getElementById('dep').value;
         const s = document.getElementById('dest').value;
-        const ph = document.getElementById('phone').value;
-        const p = document.getElementById('prix').value;
-        const t = document.getElementById('date').value;
+        const p = document.getElementById('tel_chauffeur').value;
+        const pr = document.getElementById('prix_trajet').value;
 
-        if(!d || !s || !ph) return alert("Le téléphone est OBLIGATOIRE !");
+        if(!d || !s || !p) return alert("Remplis tous les champs !");
 
-        const { error } = await supabaseClient.from('trajets').insert([{ 
-            depart: d, destination: s, phone: ph, email: currentUserEmail, prix: p, date_heure: t 
+        await supabaseClient.from('trajets').insert([{ 
+            depart: d, destination: s, phone: p, email: emailSession, nom: nomSession, prix: pr 
         }]);
+        alert("Annonce publiée !");
+        chargerTrajets();
+    }
 
-        if(!error) { alert("Trajet publié !"); charger(); }
-        else { alert("Erreur : Vérifie tes colonnes dans Supabase (phone et email)"); }
+    async function reserver(idTrajet, telChauffeur, nomChauffeur) {
+        const telPassager = prompt("Ton téléphone pour que " + nomChauffeur + " puisse te rappeler :");
+        if(!telPassager) return;
+
+        await supabaseClient.from('reservations').insert([
+            { trajet_id: idTrajet, passager_email: emailSession, passager_nom: nomSession, passager_phone: telPassager }
+        ]);
+
+        alert("Réservation notée dans le système !");
+        window.location.href = "sms:" + telChauffeur + "?body=Salut " + nomChauffeur + ", c'est " + nomSession + ". J'ai réservé ton trajet sur l'app !";
     }
 </script>
 </body>
