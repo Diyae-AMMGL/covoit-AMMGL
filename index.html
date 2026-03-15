@@ -6,37 +6,56 @@
     <title>TrajetGuenette - Officiel</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: #1b5e20; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; background: white; }
+        button { width: 100%; background: #1b5e20; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #2e7d32; }
         .trajet { background: white; padding: 15px; margin-top: 15px; border-radius: 10px; border-left: 6px solid #ef6c00; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .nom-chauffeur { color: #1b5e20; font-weight: bold; font-size: 14px; }
+        label { font-size: 12px; color: #1b5e20; font-weight: bold; text-transform: uppercase; }
+        .lieu-text { font-size: 14px; color: #333; margin: 5px 0; display: block; }
     </style>
 </head>
 <body>
 
 <div id="login-zone">
     <div class="card">
-        <h2>🕌 Connexion</h2>
+        <h2 style="color: #1b5e20; text-align: center;">🕌 Connexion</h2>
         <input type="text" id="u_nom" placeholder="Ton Nom et Prénom">
         <input type="email" id="u_email" placeholder="Ton adresse Email">
         <input type="password" id="u_code" placeholder="Code secret (1234)">
-        <button onclick="connexion()">Entrer</button>
+        <button onclick="connexion()">Accéder à l'application</button>
     </div>
 </div>
 
 <div id="app-zone" style="display:none;">
     <div class="card">
-        <h3>🚗 Proposer un trajet</h3>
-        <p id="bienvenue" style="font-size: 14px; color: #666;"></p>
-        <input type="text" id="dep" placeholder="📍 Départ (ex: Rue Guenette)">
-        <input type="text" id="dest" placeholder="🏁 Arrivée (ex: Mosquée)">
-        <input type="tel" id="tel_chauffeur" placeholder="📱 Ton Téléphone">
-        <input type="text" id="prix_trajet" placeholder="💰 Prix (ex: Gratuit)">
+        <h3 style="margin-top:0; color:#1b5e20;">🚗 Proposer un trajet</h3>
+        
+        <label>📍 Lieu de Départ</label>
+        <select id="dep">
+            <option value="Mosquée (39 Rue Guenette)">39 Rue Guenette (Mosquée)</option>
+            <option value="Tim Hortons Charny (1070 Bld Guillaume-Couture)">Tim Hortons Charny (1070 Bld Guillaume-Couture)</option>
+            <option value="Couche-Tard St-Romuald (2035 Bld Guillaume-Couture)">Couche-Tard St-Romuald (2035 Bld G-Couture)</option>
+            <option value="Galeries Chagnon (1200 Bld Alphonse-Desjardins)">Galeries Chagnon (1200 Bld A-Desjardins)</option>
+            <option value="Couche-Tard Lauzon (7500 Bld Guillaume-Couture)">Couche-Tard Lauzon (7500 Bld G-Couture)</option>
+        </select>
+
+        <label>🏁 Destination</label>
+        <select id="dest">
+            <option value="Mosquée (39 Rue Guenette)">39 Rue Guenette (Mosquée)</option>
+            <option value="Tim Hortons Charny (1070 Bld Guillaume-Couture)">Tim Hortons Charny (1070 Bld Guillaume-Couture)</option>
+            <option value="Couche-Tard St-Romuald (2035 Bld Guillaume-Couture)">Couche-Tard St-Romuald (2035 Bld G-Couture)</option>
+            <option value="Galeries Chagnon (1200 Bld Alphonse-Desjardins)">Galeries Chagnon (1200 Bld A-Desjardins)</option>
+            <option value="Couche-Tard Lauzon (7500 Bld Guillaume-Couture)">Couche-Tard Lauzon (7500 Bld G-Couture)</option>
+        </select>
+
+        <label>📱 Contact & Infos</label>
+        <input type="tel" id="tel_chauffeur" placeholder="Ton Téléphone (ex: 418-xxx-xxxx)">
+        <input type="text" id="prix_trajet" placeholder="Prix (ex: Gratuit ou 5$)">
         <button onclick="publier()">Publier l'offre</button>
     </div>
-    <div id="liste-trajets" style="max-width: 400px; margin: 20px auto;"></div>
+    <div id="liste-trajets" style="max-width: 450px; margin: 20px auto;"></div>
 </div>
 
 <script>
@@ -57,22 +76,22 @@
             emailSession = mail;
             document.getElementById('login-zone').style.display = "none";
             document.getElementById('app-zone').style.display = "block";
-            document.getElementById('bienvenue').innerText = "Ravi de vous voir, " + nomSession;
             chargerTrajets();
-        } else { alert("Merci de remplir Nom, Email et Code (1234) correctement."); }
+        } else { alert("Données invalides. Code requis: 1234"); }
     }
 
     async function chargerTrajets() {
         const { data } = await supabaseClient.from('trajets').select('*').order('id', {ascending: false});
         const div = document.getElementById('liste-trajets');
-        div.innerHTML = "<h3>Trajets disponibles :</h3>";
+        div.innerHTML = "<h3 style='color:#1b5e20;'>Trajets disponibles :</h3>";
         data.forEach(t => {
             div.innerHTML += `
                 <div class="trajet">
-                    <div class="nom-chauffeur">👤 ${t.nom || 'Anonyme'}</div>
-                    <strong>${t.depart} ➔ ${t.destination}</strong><br>
-                    <span style="font-weight:bold; color:#1b5e20;">Prix: ${t.prix || 'Gratuit'}</span><br>
-                    <button style="background:#ef6c00; margin-top:10px;" onclick="reserver(${t.id}, '${t.phone}', '${t.nom}')">Réserver</button>
+                    <div style="color:#1b5e20; font-weight:bold; margin-bottom:5px;">👤 Conducteur: ${t.nom}</div>
+                    <div class="lieu-text"><strong>DE:</strong> ${t.depart}</div>
+                    <div class="lieu-text"><strong>À:</strong> ${t.destination}</div>
+                    <div style="font-weight:bold; color:#ef6c00; margin-top:5px;">💰 ${t.prix || 'Gratuit'}</div>
+                    <button style="background:#ef6c00; margin-top:10px;" onclick="reserver(${t.id}, '${t.phone}', '${t.nom}')">Réserver ma place</button>
                 </div>`;
         });
     }
@@ -83,25 +102,27 @@
         const p = document.getElementById('tel_chauffeur').value;
         const pr = document.getElementById('prix_trajet').value;
 
-        if(!d || !s || !p) return alert("Remplis tous les champs !");
+        if(d === s) return alert("Le départ et l'arrivée ne peuvent pas être identiques !");
+        if(!p) return alert("Le numéro de téléphone est obligatoire.");
 
-        await supabaseClient.from('trajets').insert([{ 
+        const { error } = await supabaseClient.from('trajets').insert([{ 
             depart: d, destination: s, phone: p, email: emailSession, nom: nomSession, prix: pr 
         }]);
-        alert("Annonce publiée !");
-        chargerTrajets();
+        
+        if(!error) { alert("Trajet publié avec succès !"); chargerTrajets(); }
+        else { alert("Erreur lors de la publication."); }
     }
 
     async function reserver(idTrajet, telChauffeur, nomChauffeur) {
-        const telPassager = prompt("Ton téléphone pour que " + nomChauffeur + " puisse te rappeler :");
+        const telPassager = prompt("Ton téléphone pour que " + nomChauffeur + " te contacte :");
         if(!telPassager) return;
 
         await supabaseClient.from('reservations').insert([
             { trajet_id: idTrajet, passager_email: emailSession, passager_nom: nomSession, passager_phone: telPassager }
         ]);
 
-        alert("Réservation notée dans le système !");
-        window.location.href = "sms:" + telChauffeur + "?body=Salut " + nomChauffeur + ", c'est " + nomSession + ". J'ai réservé ton trajet sur l'app !";
+        alert("Réservation confirmée dans le système.");
+        window.location.href = "sms:" + telChauffeur + "?body=Salut " + nomChauffeur + ", c'est " + nomSession + ". J'ai réservé ton trajet sur l'application !";
     }
 </script>
 </body>
