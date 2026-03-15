@@ -23,7 +23,7 @@
         <h2 style="color: #1b5e20; text-align: center;">🕌 Connexion</h2>
         <input type="text" id="u_nom" placeholder="Ton Nom et Prénom">
         <input type="email" id="u_email" placeholder="Ton adresse Email">
-        <input type="password" id="u_code" placeholder="Code secret (0000)">
+        <input type="password" id="u_code" placeholder="Code secret">
         <button onclick="connexion()">Accéder à l'application</button>
     </div>
 </div>
@@ -72,13 +72,17 @@
         const mail = document.getElementById('u_email').value;
         const code = document.getElementById('u_code').value;
 
+        // Le code est bien "0000" mais il n'est plus affiché nulle part sur la page
         if(nom.length > 2 && mail.includes('@') && code === "0000") {
             nomSession = nom;
             emailSession = mail;
             document.getElementById('login-zone').style.display = "none";
             document.getElementById('app-zone').style.display = "block";
             chargerTrajets();
-        } else { alert("Données invalides. Code requis: 0000"); }
+        } else { 
+            // Message d'erreur flou pour ne pas aider les intrus
+            alert("Accès refusé. Vérifiez vos informations."); 
+        }
     }
 
     async function chargerTrajets() {
