@@ -1,11 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Covoiturage AMMGL</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 400px; }
+        .header { background: #3a55b4; color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn-add { width: 100%; background: #3a55b4; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .trajet { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #2ecc71; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .btn-wa { background: #25D366; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 style="margin:0">🚗 AMMGL Covoit</h1>
+        <p style="margin:5px 0 0; opacity:0.8">Communauté de Lévis</p>
+    </div>
+
+    <div class="card">
+        <h3>Proposer un trajet</h3>
+        <input type="text" id="dest" placeholder="📍 Destination (ex: Mosquée)">
+        <input type="text" id="heure" placeholder="⏰ Heure (ex: 18h30)">
+        <input type="number" id="pl" placeholder="💺 Places disponibles">
+        <button class="btn-add" onclick="ajouter()">Publier l'annonce</button>
+    </div>
+
+    <div id="liste"></div>
+</div>
+
 <script>
-    // ... tes fonctions précédentes ...
-    
+    let trajets = JSON.parse(localStorage.getItem('covoit_db')) || [];
+
+    function afficher() {
+        const div = document.getElementById('liste');
+        div.innerHTML = "";
+        trajets.forEach((t, i) => {
+            div.innerHTML += `
+                <div class="trajet">
+                    <button class="btn-wa" onclick="reserver(${i})">Réserver</button>
+                    <strong>${t.dest}</strong><br>
+                    <span style="color:#666; font-size:14px;">Départ: ${t.heure} · ${t.pl} places</span>
+                </div>`;
+        });
+    }
+
+    function ajouter() {
+        const d = document.getElementById('dest').value;
+        const h = document.getElementById('heure').value;
+        const p = document.getElementById('pl').value;
+        if(d && h && p) {
+            trajets.push({dest: d, heure: h, pl: p});
+            localStorage.setItem('covoit_db', JSON.stringify(trajets));
+            document.getElementById('dest').value = "";
+            document.getElementById('heure').value = "";
+            document.getElementById('pl').value = "";
+            afficher();
+        }
+    }
+
     function reserver(i) {
         const t = trajets[i];
-        const message = `Salam! Je veux réserver une place pour le trajet vers ${t.dest} à ${t.heure}.`;
-        // Remplace 0000000000 par ton vrai numéro de téléphone (ex: 14181234567)
-        const numero = "0000000000"; 
-        window.open(`https://wa.me/${numero}?text=${encodeURIComponent(message)}`, '_blank');
+        const msg = encodeURIComponent(`Salam! Je souhaite réserver une place pour le trajet vers ${t.dest} à ${t.heure}.`);
+        window.open(`https://wa.me/14181234567?text=${msg}`); // CHANGE LE NUMÉRO ICI
     }
+
+    afficher();
 </script>
+
+</body>
+</html>
