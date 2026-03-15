@@ -3,30 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AMMGL Express</title>
+    <title>AMMGL Express Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; background: #0052cc; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .trajet { background: white; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid #0052cc; display: flex; justify-content: space-between; }
+        :root { --primary: #0052cc; --accent: #2ecc71; --dark: #1a1a1a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f8f9fa; color: var(--dark); }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #map { height: 250px; width: 100%; z-index: 1; }
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: -30px; position: relative; z-index: 10; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; transition: 0.3s; cursor: pointer; }
+        button:active { transform: scale(0.98); }
+        .trajet-item { background: white; padding: 15px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--accent); }
+        .price-tag { background: #eef9f2; color: var(--accent); padding: 5px 12px; border-radius: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>🚗 Publier un trajet</h2>
-    <input type="text" id="dep" placeholder="Départ (ex: Lévis)">
-    <input type="text" id="dest" placeholder="Destination (ex: Québec)">
-    <input type="number" id="prix" placeholder="Prix ($)">
-    <input type="datetime-local" id="date">
-    <button onclick="ajouter()">Publier</button>
+<header>🚗 AMMGL EXPRESS</header>
+<div id="map"></div>
+
+<div class="container">
+    <div class="card">
+        <h3 style="margin-top:0">Publier un trajet</h3>
+        <input type="text" id="dep" placeholder="📍 Départ (ex: Lévis)">
+        <input type="text" id="dest" placeholder="🏁 Destination (ex: Québec)">
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="prix" placeholder="Prix ($)">
+            <input type="datetime-local" id="date">
+        </div>
+        <button onclick="publier()">Publier mon trajet</button>
+    </div>
+
+    <div id="liste">
+        <p style="text-align:center; color: #888;">Recherche des trajets...</p>
+    </div>
 </div>
 
-<div id="liste" style="max-width: 400px; margin: 20px auto;"></div>
-
 <script>
+    // Initialisation de la carte (Centrée sur Lévis)
+    const map = L.map('map').setView([46.8033, -71.1779], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Connexion Supabase
     const SB_URL = "https://ksbzyqmdmqfpsgvrhrah.supabase.co";
     const SB_KEY = "sb_publishable_K7nSAQpM6rO_G_I3hG_Rvhrah";
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
@@ -34,30 +56,38 @@
     async function charger() {
         const { data } = await supabaseClient.from('trajets').select('*').order('id', { ascending: false });
         const div = document.getElementById('liste');
-        div.innerHTML = "<h3>Trajets disponibles :</h3>";
+        div.innerHTML = "<h3 style='margin-bottom:10px'>Trajets en direct</h3>";
         data.forEach(t => {
-            div.innerHTML += `<div class="trajet">
-                <div><strong>${t.depart} ➔ ${t.destination}</strong><br><small>${t.date_heure}</small></div>
-                <div style="color: green; font-weight: bold;">${t.prix}$</div>
-            </div>`;
+            div.innerHTML += `
+                <div class="trajet-item">
+                    <div>
+                        <strong>${t.depart} → ${t.destination}</strong><br>
+                        <small style="color:#777">📅 ${t.date_heure.replace('T', ' ')}</small>
+                    </div>
+                    <div class="price-tag">${t.prix}$</div>
+                </div>`;
         });
     }
 
-    async function ajouter() {
+    async function publier() {
         const d = document.getElementById('dep').value;
         const s = document.getElementById('dest').value;
         const p = document.getElementById('prix').value;
         const t = document.getElementById('date').value;
 
+        if(!d || !s || !p) return alert("Remplis les infos !");
+
         const { error } = await supabaseClient.from('trajets').insert([{ depart: d, destination: s, prix: p, date_heure: t }]);
         
-        if (error) alert("Erreur : " + error.message);
+        if (error) alert("Vérifie ta table Supabase !");
         else {
-            alert("Trajet enregistré !");
+            alert("✅ C'est en ligne !");
             charger();
         }
     }
+
     charger();
 </script>
+
 </body>
 </html>
