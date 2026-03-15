@@ -1,1 +1,88 @@
-sb_publishable_K7nSAQmeumbMIM_ubr417A_26iKLKpv
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMMGL Express Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --blue: #0052cc; --green: #2ecc71; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: var(--blue); margin-top: 0; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; background: var(--blue); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .trajet { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--blue); display: flex; justify-content: space-between; align-items: center; }
+        .price { font-size: 20px; color: var(--green); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🚗 Publier un Trajet</h2>
+    <input type="text" id="dep" placeholder="Lieu de départ (ex: Lévis)">
+    <input type="text" id="dest" placeholder="Destination (ex: Québec)">
+    <div style="display:flex; gap:10px;">
+        <input type="number" id="prix" placeholder="Prix $">
+        <input type="datetime-local" id="date">
+    </div>
+    <button onclick="ajouterTrajet()">Publier maintenant</button>
+</div>
+
+<div id="liste-trajets">
+    <p style="text-align:center; color:#666;">Chargement des trajets en direct...</p>
+</div>
+
+<script>
+    // CONNEXION À TON CERVEAU SUPABASE
+    const SB_URL = "https://ksbzyqmdmqfpsgvrhrah.supabase.co";
+    const SB_KEY = "sb_publishable_K7nSAQpM6rO_G_I3hG_Rvhrah"; // Ta clé de l'image !
+    const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+    // Charger les trajets automatiquement
+    async function chargerTrajets() {
+        const { data, error } = await supabase.from('trajets').select('*').order('id', { ascending: false });
+        if (error) { console.log(error); return; }
+        
+        const div = document.getElementById('liste-trajets');
+        div.innerHTML = "";
+        data.forEach(t => {
+            div.innerHTML += `
+                <div class="trajet">
+                    <div>
+                        <strong>${t.depart} ➔ ${t.destination}</strong><br>
+                        <small>📅 ${t.date_heure || 'À confirmer'}</small>
+                    </div>
+                    <div class="price">${t.prix}$</div>
+                </div>`;
+        });
+    }
+
+    // Envoyer un trajet vers le serveur
+    async function ajouterTrajet() {
+        const dep = document.getElementById('dep').value;
+        const dest = document.getElementById('dest').value;
+        const prix = document.getElementById('prix').value;
+        const date = document.getElementById('date').value;
+
+        if(!dep || !dest || !prix) return alert("Remplis tout !");
+
+        const { error } = await supabase.from('trajets').insert([{ 
+            depart: dep, 
+            destination: dest, 
+            prix: parseInt(prix), 
+            date_heure: date 
+        }]);
+
+        if (error) {
+            alert("Erreur: Vérifie si tu as créé la table 'trajets' sur Supabase!");
+        } else {
+            alert("Trajet publié sur le serveur !");
+            chargerTrajets();
+        }
+    }
+
+    chargerTrajets();
+</script>
+</body>
+</html>
